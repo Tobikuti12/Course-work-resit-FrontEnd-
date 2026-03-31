@@ -1,0 +1,175 @@
+:root{
+  --bg:#f5f7fb;
+  --surface:#ffffff;
+  --accent:#3b82f6;
+  --accent-dark:#1e40af;
+  --success:#16a34a;
+  --danger:#dc2626;
+  --muted:#6b7280;
+  --text:#111827;
+  --shadow:0 8px 24px rgba(0,0,0,0.08);
+  --radius:12px;
+  --gap:1rem;
+  --card-padding:1rem;
+  --transition:200ms ease;
+}
+
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;}
+
+header{
+  width:100%;
+  background:linear-gradient(90deg,var(--accent),var(--accent-dark));
+  padding:.8rem 1rem;
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:.5rem;
+  box-shadow:var(--shadow);
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+
+header button{
+  background:rgba(255,255,255,0.15);
+  color:#fff;
+  border:none;
+  padding:.5rem .9rem;
+  border-radius:9px;
+  font-weight:700;
+  cursor:pointer;
+  transition:transform var(--transition),box-shadow var(--transition);
+}
+
+header button:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.15);}
+header button:disabled{opacity:.5;cursor:not-allowed;}
+
+main{max-width:1100px;margin:2rem auto;padding:0 1rem 3rem;}
+
+h1{font-size:1.8rem;margin-bottom:1rem;color:var(--accent-dark);}
+h2{font-size:1.2rem;margin:.5rem 0;}
+
+.product-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--gap);}
+
+.product-card{
+  background:var(--surface);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:var(--card-padding);
+  display:flex;
+  gap:1rem;
+  transition:transform var(--transition),box-shadow var(--transition);
+}
+
+.product-card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 12px 28px rgba(0,0,0,0.12);
+}
+
+.product-card img{
+  width:150px;
+  height:110px;
+  object-fit:cover;
+  border-radius:8px;
+  border:1px solid rgba(0,0,0,0.06);
+}
+
+.product-card>div{flex:1;}
+.product-card p{margin:.3rem 0;color:var(--muted);}
+.product-card span{color:#facc15;font-weight:700;margin-left:.3rem;}
+
+.addtocart{
+  background:var(--accent);
+  color:#fff;
+  padding:.5rem .8rem;
+  border-radius:9px;
+  border:none;
+  cursor:pointer;
+  font-weight:700;
+  transition:transform var(--transition),box-shadow var(--transition);
+}
+
+.addtocart:hover{box-shadow:0 8px 24px rgba(59,130,246,0.2);}
+.addtocart:active{transform:scale(.97);}
+.product-card button[disabled]{opacity:.5;cursor:not-allowed;}
+
+
+.sort-bar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:.75rem;
+  margin-bottom:1.5rem;
+}
+
+.sort-bar select{
+  padding:.5rem .8rem;
+  border-radius:var(--radius);
+  border:1px solid rgba(15,23,42,0.12);
+  font-weight:600;
+  cursor:pointer;
+  transition:all var(--transition);
+  background-color:var(--surface);
+  color:var(--text);
+}
+
+.sort-bar select:hover{
+  border-color:var(--accent);
+  box-shadow:0 4px 12px rgba(59,130,246,0.15);
+}
+
+.sort-bar select:focus{
+  outline:3px solid rgba(59,130,246,0.3);
+  outline-offset:2px;
+}
+
+ul{list-style:none;padding:0;margin:0;}
+li{
+  display:flex;
+  gap:1rem;
+  align-items:center;
+  padding:.6rem 0;
+  border-bottom:1px solid rgba(0,0,0,0.05);
+}
+
+li img{
+  width:64px;
+  height:48px;
+  border-radius:6px;
+  object-fit:cover;
+}
+
+li button{
+  background:transparent;
+  border:1px solid rgba(220,38,38,0.2);
+  color:var(--danger);
+  padding:.35rem .6rem;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+input[type='text'],input[type='number'],select,input[type='email']{
+  padding:.45rem .6rem;
+  border-radius:8px;
+  border:1px solid rgba(15,23,42,0.12);
+  width:100%;
+  max-width:420px;
+  margin-top:.4rem;
+}
+
+label{font-weight:600;color:var(--muted);display:inline-block;margin-top:.2rem;}
+
+button:focus,input:focus,select:focus{outline:3px solid rgba(59,130,246,0.3);outline-offset:2px;}
+
+@media(max-width:720px){
+  .product-card{flex-direction:row;gap:.75rem;}
+  .product-card img{width:120px;height:84px;}
+}
+
+@media(max-width:480px){
+  main{margin:1rem auto;padding:0 .75rem;}
+  .product-card{flex-direction:column;align-items:flex-start;}
+  .product-card img{width:100%;height:160px;}
+  header{padding:.5rem;}
+  header button{min-width:unset;padding:.4rem .6rem;}
+}

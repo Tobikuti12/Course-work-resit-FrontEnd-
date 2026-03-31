@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search Lessons</title>
+</head>
+<body>
+<h2>Search Lessons</h2>
+<input type="text" id="searchInput" placeholder="Type to search..." />
+
+<ul id="results"></ul>
+
+<script>
+const searchInput = document.getElementById('searchInput');
+const resultsList = document.getElementById('results');
+
+searchInput.addEventListener('input', async () => {
+    const query = searchInput.value.trim();
+    if(query === ""){
+        resultsList.innerHTML = "";
+        return;
+    }
+
+    try {
+        const response = await fetch(`http://localhost:3000/search?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        resultsList.innerHTML = data.map(item => `<li>${item.title} - ${item.location} - $${item.price}</li>`).join('');
+    } catch(err){
+        console.error(err);
+        resultsList.innerHTML = "<li>Error fetching results</li>";
+    }
+});
+</script>
+</body>
+</html>
