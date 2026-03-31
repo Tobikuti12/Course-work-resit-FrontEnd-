@@ -23,7 +23,7 @@ searchInput.addEventListener('input', async () => {
     }
 
     try {
-        const response = await fetch(`http://localhost:3000/search?q=${encodeURIComponent(query)}`);
+        const response = await fetch(`http://coursework-backend-1-irvy.onrender.com/search?q=${encodeURIComponent(query)}`);
         const data = await response.json();
         resultsList.innerHTML = data.map(item => `<li>${item.title} - ${item.location} - $${item.price}</li>`).join('');
     } catch(err){
