@@ -1,138 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search & Checkout Lessons</title>
-    <style>
-        .error { color: red; font-size: 0.8em; }
-        .success { color: green; font-weight: bold; }
-        input:invalid { border: 2px solid red; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search Lessons</title>
 </head>
 <body>
+<h2>Search Lessons</h2>
+<input type="text" id="searchInput" placeholder="Type to search..." />
 
-    <h2>1. Full Stack Search</h2>
-    <input type="text" id="searchInput" placeholder="Search by title or location..." />
-    <ul id="results"></ul>
-
-    <hr>
-
-    <h2>2. Checkout Form (Validated)</h2>
-    <div id="checkoutForm">
-        <p>
-            First Name: <input type="text" id="fname" placeholder="Letters only" required>
-            <span id="fnameError" class="error"></span>
-        </p>
-        <p>
-            Last Name: <input type="text" id="lname" placeholder="Letters only" required>
-            <span id="lnameError" class="error"></span>
-        </p>
-        <p>
-            Phone: <input type="text" id="phone" placeholder="Numbers only" required>
-            <span id="phoneError" class="error"></span>
-        </p>
-        
-        <button id="submitBtn" disabled>Place Order</button>
-        <p id="statusMsg"></p>
-    </div>
+<ul id="results"></ul>
 
 <script>
-    const searchInput = document.getElementById('searchInput');
-    const resultsList = document.getElementById('results');
-    const submitBtn = document.getElementById('submitBtn');
-    const statusMsg = document.getElementById('statusMsg');
+const searchInput = document.getElementById('searchInput');
+const resultsList = document.getElementById('results');
 
-    // CONFIGURE
-    const BASE_URL = "https://coursework-backend-1-irvy.onrender.com";
+searchInput.addEventListener('input', async () => {
+    const query = searchInput.value.trim();
+    if(query === ""){
+        resultsList.innerHTML = "";
+        return;
+    }
 
-    // SEARCH LOGIC ---
-    searchInput.addEventListener('input', async () => {
-        const query = searchInput.value.trim();
-        if(query === "") {
-            resultsList.innerHTML = "";
-            return;
-        }
-
-        try {
-            // This satisfies the "Search as you type" backend requirement
-            const response = await fetch(`${BASE_URL}/search?q=${encodeURIComponent(query)}`);
-            const data = await response.json();
-            
-            if(data.length === 0) {
-                resultsList.innerHTML = "<li>No lessons found</li>";
-            } else {
-                resultsList.innerHTML = data.map(item => 
-                    `<li><strong>${item.title}</strong> (${item.location}) - $${item.price} 
-                     <br><small>ID: ${item._id} | Spaces: ${item.availableInventory}</small></li>`
-                ).join('');
-            }
-        } catch(err) {
-            console.error("Search Error:", err);
-            resultsList.innerHTML = "<li>Error connecting to backend</li>";
-        }
-    });
-
-    //  VALIDATION LOGIC 
-    const validate = () => {
-        const fname = document.getElementById('fname').value;
-        const lname = document.getElementById('lname').value;
-        const phone = document.getElementById('phone').value;
-
-        const isFnameValid = /^[A-Za-z]+$/.test(fname);
-        const isLnameValid = /^[A-Za-z]+$/.test(lname);
-        const isPhoneValid = /^\d+$/.test(phone);
-
-        // Show/Hide error messages
-        document.getElementById('fnameError').innerText = isFnameValid ? "" : "Letters only";
-        document.getElementById('lnameError').innerText = isLnameValid ? "" : "Letters only";
-        document.getElementById('phoneError').innerText = isPhoneValid ? "" : "Numbers only";
-
-        // Enable button only if all are true
-        submitBtn.disabled = !(isFnameValid && isLnameValid && isPhoneValid);
-    };
-
-    document.getElementById('fname').addEventListener('input', validate);
-    document.getElementById('lname').addEventListener('input', validate);
-    document.getElementById('phone').addEventListener('input', validate);
-
-    //  SUBMIT ORDER & UPDATE INVENTORY (POST & PUT) ---
-    submitBtn.addEventListener('click', async () => {
-        const orderData = {
-            firstName: document.getElementById('fname').value,
-            lastName: document.getElementById('lname').value,
-            phone: document.getElementById('phone').value,
-            // In a real app, you'd pass the actual cart array here
-            items: ["Sample Lesson ID"] 
-        };
-
-        try {
-            statusMsg.innerText = "Processing order...";
-
-            //  POST the order (Persists to 'orders' collection)
-            const orderRes = await fetch(`${BASE_URL}/order`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(orderData)
-            });
-
-            if (orderRes.ok) {
-                //  PUT to update spaces 
-
-                await fetch(`${BASE_URL}/lessons/PUT_LESSON_ID_HERE`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ spaces: 1 })
-                });
-
-                statusMsg.className = "success";
-                statusMsg.innerText = "Order Successful! Data saved to MongoDB.";
-            }
-        } catch (err) {
-            statusMsg.className = "error";
-            statusMsg.innerText = "Failed to place order.";
-        }
-    });
+    try {
+        const response = await fetch(`http://coursework-backend-1-irvy.onrender.com/search?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        resultsList.innerHTML = data.map(item => `<li>${item.title} - ${item.location} - $${item.price}</li>`).join('');
+    } catch(err){
+        console.error(err);
+        resultsList.innerHTML = "<li>Error fetching results</li>";
+    }
+});
 </script>
 </body>
 </html>
