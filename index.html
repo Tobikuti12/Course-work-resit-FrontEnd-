@@ -48,7 +48,6 @@
                     <p>Price: ${{product.price}}</p>
                     <p>Location: {{product.location}}</p>
                     <p>Spaces: {{product.availableInventory - cartCount(product.id || product._id)}}</p>
-                    
                     <button class="addtocart" v-on:click="addtocart(product)" v-if="canAddToCart(product)">Add to cart</button>
                     <button disabled v-else>Out of Stock</button>
                 </div>
@@ -56,36 +55,47 @@
         </div>
 
         <div v-else>
-            <h1>Checkout</h1>
+            <h1>Shopping Cart</h1>
             <button v-on:click="showCheckout">Back to Lessons</button>
             
-            <div style="margin-top:20px;">
-                <p><strong>First Name (Letters only):</strong> <input v-model.trim="order.firstname" /></p>
-                <p><strong>Last Name (Letters only):</strong> <input v-model.trim="order.lastname" /></p>
-                <p><strong>Phone (Numbers only):</strong> <input v-model.trim="order.phone" /></p>
-                <p><strong>Address:</strong> <input v-model="order.address" /></p>
-                <p><strong>City:</strong> <input v-model="order.city" /></p>
+            <div style="margin-top:20px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+                <h3>Your Lessons</h3>
+                <div v-if="cart.length > 0">
+                    <div v-for="(item, index) in cart" :key="index" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
+                        <span>{{ item.title }} - ${{ item.price }}</span>
+                        <button v-on:click="removeItem(index)" style="background: red; color: white; border: none; padding: 5px; cursor: pointer;">Remove</button>
+                    </div>
+                </div>
+                <div v-else>
+                    <p>Your cart is empty.</p>
+                </div>
+            </div>
+
+            <div style="margin-top:30px;">
+                <h3>Checkout Details</h3>
+                <p>First Name: <input v-model.trim="order.firstname" placeholder="Letters only" /></p>
+                <p>Last Name: <input v-model.trim="order.lastname" placeholder="Letters only" /></p>
+                <p>Phone: <input v-model.trim="order.phone" placeholder="Numbers only" /></p>
+                <p>Address: <input v-model="order.address" /></p>
+                <p>City: <input v-model="order.city" /></p>
                 <p>
-                    <strong>State:</strong>
+                    State:
                     <select v-model="order.state">
-                        <option disabled value="">State</option>
+                        <option disabled value="">Select State</option>
                         <option v-for="(state,key) in states" v-bind:value="state">{{key}}</option>
                     </select>
                 </p>
 
-                <div style="background: #f4f4f4; padding: 15px; margin-top: 20px; border: 1px solid #ddd;">
-                    <h3>Order Summary Preview</h3>
+                <div style="background: #f9f9f9; padding: 10px; margin-top: 20px;">
+                    <h4>Preview</h4>
                     <p>Name: {{order.firstname}} {{order.lastname}}</p>
                     <p>Phone: {{order.phone}}</p>
-                    <p>Items in Cart: {{cartItemCount}}</p>
                 </div>
 
-                <button v-if="isFormValid" v-on:click="submitForm" style="background-color: #16a34a; color: white; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; margin-top: 20px;">
+                <button v-if="isFormValid && cart.length > 0" v-on:click="submitForm" style="background: green; color: white; padding: 10px 20px; margin-top: 20px; border: none; cursor: pointer;">
                     Place Order
                 </button>
-                <button v-else disabled style="margin-top: 20px;">
-                    Complete Form Correctlly
-                </button>
+                <button v-else disabled style="margin-top: 20px;">Complete Form Correctlly</button>
             </div>
         </div>
     </main>
@@ -104,56 +114,35 @@ let webstore = new Vue({
         sortBy: "title",
         sortOrder: "asc",
         searchText:"",
-        order:{
-            firstname:'',
-            lastname:'',
-            phone:'',
-            address:'',
-            city:'',
-            state:''
-        },
+        order:{ firstname:'', lastname:'', phone:'', address:'', city:'', state:'' },
         states:{ AL:'Alabama', AR:'Arizona', CA:'California', NV:'Nevada' }
     },
-    created() {
-        this.fetchLessons();
-    },
+    created() { this.fetchLessons(); },
     methods:{
         async fetchLessons() {
             try {
                 const res = await fetch(`${BASE_URL}/lessons`);
                 const serverData = await res.json();
-                if (serverData && serverData.length > 0) {
-                    this.products = serverData;
-                }
-            } catch (err) {
-                console.log("Database connection issue. Showing local data.");
-            }
+                if (serverData && serverData.length > 0) { this.products = serverData; }
+            } catch (err) { console.log("Using local data."); }
         },
         addtocart(product){ this.cart.push(product); },
+        // Removes item and adds space back automatically
+        removeItem(index){ this.cart.splice(index, 1); },
         canAddToCart(product){ 
             let id = product.id || product._id;
             return product.availableInventory > this.cartCount(id); 
         },
-        cartCount(id){ 
-            return this.cart.filter(p=>(p.id || p._id)===id).length; 
-        },
+        cartCount(id){ return this.cart.filter(p=>(p.id || p._id)===id).length; },
         showCheckout(){ this.showProduct = !this.showProduct; },
         async submitForm(){ 
-            // The handbook requires a specific message
             alert('Order submitted!'); 
-            
             try {
-                // 1. POST the Order
                 await fetch(`${BASE_URL}/order`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        customer: this.order,
-                        items: this.cart.map(i => i.id || i._id) 
-                    })
+                    body: JSON.stringify({ customer: this.order, items: this.cart.map(i => i.id || i._id) })
                 });
-
-                // 2. PUT Update Inventory (Requirement)
                 for (let item of this.cart) {
                     let id = item._id || item.id;
                     await fetch(`${BASE_URL}/lessons/${id}`, {
@@ -162,30 +151,23 @@ let webstore = new Vue({
                         body: JSON.stringify({ spaces: 1 })
                     });
                 }
-            } catch (e) {
-                console.log("Submission logged on Render.");
-            }
-
-            // Reset UI
+            } catch (e) { console.log("Logs generated on Render."); }
             this.cart = [];
             this.showProduct = true;
             this.order = { firstname:'', lastname:'', phone:'', address:'', city:'', state:'' };
-            this.fetchLessons(); // Refresh from server
+            this.fetchLessons();
         }
     },
     computed:{
         cartItemCount(){ return this.cart.length; },
         isFormValid() {
-            // Handbook Requirement: Name letters only, Phone numbers only
+            // Handbook regex requirements
             const nameRegex = /^[A-Za-z\s]+$/;
             const phoneRegex = /^[0-9]+$/;
-
             return nameRegex.test(this.order.firstname) && 
                    nameRegex.test(this.order.lastname) && 
                    phoneRegex.test(this.order.phone) &&
-                   this.order.address &&
-                   this.order.city &&
-                   this.order.state;
+                   this.order.address && this.order.city && this.order.state;
         },
         filteredProducts(){
             let list = [...this.products];
