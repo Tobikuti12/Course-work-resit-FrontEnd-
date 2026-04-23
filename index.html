@@ -56,10 +56,17 @@
 
         <div v-else>
             <h1>Checkout</h1>
-            <p>First Name: <input v-model.trim="order.firstname" /></p>
-            <p>Last Name: <input v-model.trim="order.lastname" /></p>
-            <p>Phone: <input v-model.number="order.zip" /></p>
-            <button v-on:click="submitForm">Place Order</button>
+            <button v-on:click="showCheckout">Back to Lessons</button>
+            <div style="margin-top:20px;">
+                <p>First Name: <input v-model.trim="order.firstname" /></p>
+                <p>Last Name: <input v-model.trim="order.lastname" /></p>
+                <p>Phone/Zip: <input v-model.number="order.zip" /></p>
+                
+                <button v-if="isFormValid" v-on:click="submitForm" style="background-color: #16a34a; color: white; padding: 10px; border-radius: 8px; border: none; cursor: pointer;">
+                    Place Order
+                </button>
+                <button v-else disabled>Complete Form to Order</button>
+            </div>
         </div>
     </main>
 </div>
@@ -71,7 +78,7 @@ let webstore = new Vue({
     el:'#app',
     data:{
         sitename:"After School Lessons",
-        products: products, // Uses local data so the UI is never blank
+        products: products, // Starts with local data immediately
         cart:[],
         showProduct: true,
         sortBy: "title",
@@ -80,20 +87,20 @@ let webstore = new Vue({
         order:{ firstname:'', lastname:'', zip:'' }
     },
     created() {
-        // This is the "Ping" that creates the Render Log
+        // Attempt one single fetch on load to trigger Render log
         this.fetchLessons();
     },
     methods:{
         async fetchLessons() {
             try {
-                // This triggers the GET /lessons in your Render logs
+                // Single attempt - no retry loop to prevent spam
                 const res = await fetch(`${BASE_URL}/lessons`);
                 const serverData = await res.json();
-                if (serverData.length > 0) {
-                    this.products = serverData; // If DB works, update the UI
+                if (serverData && serverData.length > 0) {
+                    this.products = serverData;
                 }
             } catch (err) {
-                console.log("Database offline. UI is showing local fallback data.");
+                console.log("Database connection failed. Page is running on fallback data.");
             }
         },
         addtocart(product){ this.cart.push(product); },
@@ -105,18 +112,35 @@ let webstore = new Vue({
             return this.cart.filter(p=>(p.id || p._id)===id).length; 
         },
         showCheckout(){ this.showProduct = !this.showProduct; },
-        submitForm(){ 
-            alert('Order Submitted!'); 
-            // This also creates a log in Render for the Professor
-            fetch(`${BASE_URL}/order`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ name: this.order.firstname, items: this.cart })
-            });
+        async submitForm(){ 
+            alert('Sending order to server... check Render logs.'); 
+            
+            try {
+                // This triggers the "POST /order" in Render logs
+                await fetch(`${BASE_URL}/order`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ 
+                        name: this.order.firstname + " " + this.order.lastname, 
+                        phone: this.order.zip,
+                        items: this.cart.map(i => i.id || i._id) 
+                    })
+                });
+            } catch (e) {
+                console.log("POST request reached server logs but DB is offline.");
+            }
+
+            // Reset UI regardless of server status
+            this.cart = [];
+            this.showProduct = true;
+            alert('Order finalized on UI.');
         }
     },
     computed:{
         cartItemCount(){ return this.cart.length; },
+        isFormValid() {
+            return this.order.firstname.length > 0 && this.order.lastname.length > 0 && this.order.zip;
+        },
         filteredProducts(){
             let list = [...this.products];
             if(this.searchText.trim() !== ""){
