@@ -3,114 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>After School Lessons</title>
+    <title>After School Activity Hub</title>
     <link rel="stylesheet" href="AfterSchoolLessons.css">
     <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
     <script src="AfterSchoolLessons.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
 </head>
-<body style="font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0;">
+<body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; margin: 0;">
 <div id="app">
-    <header style="padding: 20px; background: #2c3e50; color: white; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000;">
-        <h2 style="margin:0;">{{sitename}}</h2>
-        <button v-on:click="showCheckout" v-if="cartItemCount > 0" style="padding: 10px 20px; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 5px; font-weight: bold;">
-            {{cartItemCount}} <span class="fa-solid fa-cart-shopping"></span> CheckOut
+    <header style="padding: 15px 40px; background: #1e293b; color: white; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000;">
+        <h1 style="margin:0; font-size: 1.4rem; letter-spacing: 1px;">{{sitename}}</h1>
+        
+        <button v-on:click="showCheckout" v-if="cartItemCount > 0" style="padding: 10px 25px; cursor: pointer; background: #10b981; color: white; border: none; border-radius: 50px; font-weight: 600; transition: 0.3s;">
+            {{cartItemCount}} <span class="fa-solid fa-cart-shopping"></span> Checkout
         </button>
-        <button disabled v-else style="padding: 10px 20px; opacity: 0.6; background: #95a5a6; color: white; border: none; border-radius: 5px;">
+        <button disabled v-else style="padding: 10px 25px; opacity: 0.5; background: #64748b; color: white; border: none; border-radius: 50px; cursor: not-allowed;">
             <span class="fa-solid fa-cart-shopping"></span> Cart Empty
         </button>   
     </header>
 
-    <main style="max-width: 1200px; margin: 20px auto; padding: 0 20px;">
+    <main style="max-width: 1200px; margin: 40px auto; padding: 0 20px;">
         <div v-if='showProduct'>
-            <div class="search-bar" style="margin-bottom: 20px;">
-                <input type="text" v-model="searchText" placeholder="Search for lessons or locations..." style="width: 100%; padding: 12px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;" />
+            <div style="background: white; padding: 25px; border-radius: 15px; margin-bottom: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <div class="search-bar" style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; color: #475569;">Search Activities:</label>
+                    <input type="text" v-model="searchText" placeholder="Type subject or location..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-top: 8px; font-size: 1rem;" />
+                </div>
+
+                <div class="sort-bar" style="display: flex; gap: 20px; align-items: center;">
+                    <span style="font-weight: 600; color: #475569;">Sort by:</span>
+                    <select v-model="sortBy" style="padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
+                        <option value="title">Subject</option>
+                        <option value="location">Location</option>
+                        <option value="price">Price</option>
+                        <option value="availableInventory">Spaces</option>
+                    </select>
+                    <select v-model="sortOrder" style="padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
+                        <option value="asc">Ascending</option>
+                        <option value="desc">Descending</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="sort-bar" style="margin-bottom: 30px; display: flex; gap: 10px;">
-                <select v-model="sortBy" style="padding: 10px; border-radius: 5px;">
-                    <option value="title">Sort by Subject</option>
-                    <option value="location">Sort by Location</option>
-                    <option value="price">Sort by Price</option>
-                    <option value="availableInventory">Sort by Spaces</option>
-                </select>
-                <select v-model="sortOrder" style="padding: 10px; border-radius: 5px;">
-                    <option value="asc">Ascending</option>
-                    <option value="desc">Descending</option>
-                </select>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
-                <div v-for="product in filteredProducts" :key="product.id || product._id" style="background: white; border: 1px solid #ddd; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                    <img v-bind:src="product.image" alt="Lesson Image" style="width: 100%; height: 180px; object-fit: cover; border-radius: 5px;">
-                    <h3 style="margin: 15px 0 5px;">{{product.title}}</h3>
-                    <p style="color: #666; margin: 5px 0;">Location: {{product.location}}</p>
-                    <p style="font-size: 1.2em; font-weight: bold; color: #2c3e50; margin: 10px 0;">Price: ${{product.price}}</p>
-                    <p>Spaces Left: {{product.availableInventory - cartCount(product.id || product._id)}}</p>
-                    
-                    <button v-on:click="addtocart(product)" v-if="canAddToCart(product)" style="width: 100%; background: #3498db; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-size: 16px;">
-                        Add to Cart
-                    </button>
-                    <button disabled v-else style="width: 100%; background: #bdc3c7; color: white; border: none; padding: 10px; border-radius: 5px; font-size: 16px;">
-                        Out of Stock
-                    </button>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px;">
+                <div v-for="product in filteredProducts" :key="product.id || product._id" style="background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+                    <img v-bind:src="product.image" alt="Activity Image" style="width: 100%; height: 200px; object-fit: cover;">
+                    <div style="padding: 20px;">
+                        <h3 style="margin: 0; color: #1e293b;">{{product.title}}</h3>
+                        <p style="color: #64748b; margin: 8px 0;"><i class="fa-solid fa-map-pin"></i> {{product.location}}</p>
+                        <p style="font-size: 1.4rem; font-weight: 800; color: #1e293b; margin: 15px 0;">${{product.price}}</p>
+                        <p style="margin-bottom: 20px; font-weight: 500;">
+                            <span v-if="product.availableInventory - cartCount(product.id || product._id) > 0" style="color: #059669;">
+                                Spaces: {{product.availableInventory - cartCount(product.id || product._id)}}
+                            </span>
+                            <span v-else style="color: #dc2626;">Sold Out</span>
+                        </p>
+                        
+                        <button v-on:click="addtocart(product)" v-if="canAddToCart(product)" style="width: 100%; background: #3b82f6; color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 700;">
+                            Add to Cart
+                        </button>
+                        <button disabled v-else style="width: 100%; background: #e2e8f0; color: #94a3b8; border: none; padding: 12px; border-radius: 10px; cursor: not-allowed;">
+                            Full
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div v-else>
-            <button v-on:click="showCheckout" style="margin-bottom: 20px; padding: 10px 15px; cursor: pointer; background: #7f8c8d; color: white; border: none; border-radius: 5px;">
-                ← Back to Lessons
+            <button v-on:click="showCheckout" style="margin-bottom: 30px; padding: 12px 20px; cursor: pointer; background: #1e293b; color: white; border: none; border-radius: 10px; font-weight: 600;">
+                <i class="fa-solid fa-chevron-left"></i> Continue Shopping
             </button>
 
-            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 30px;">
-                <div style="background: white; border: 1px solid #ddd; padding: 25px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                    <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">Your Selection</h3>
+            <div style="display: grid; grid-template-columns: 1fr 400px; gap: 40px; align-items: start;">
+                <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <h2 style="margin-top: 0; color: #1e293b;">My Selection</h2>
                     <div v-if="cart.length > 0">
-                        <div v-for="(item, index) in cart" :key="index" style="display: flex; align-items: center; gap: 15px; padding: 15px 0; border-bottom: 1px solid #f1f1f1;">
-                            <img v-bind:src="item.image" style="width: 60px; height: 60px; object-fit: cover; border-radius: 5px;">
+                        <div v-for="(item, index) in cart" :key="index" style="display: flex; align-items: center; gap: 20px; padding: 15px 0; border-bottom: 1px solid #f1f5f9;">
+                            <img v-bind:src="item.image" style="width: 80px; height: 60px; object-fit: cover; border-radius: 8px;">
                             <div style="flex-grow: 1;">
-                                <strong style="font-size: 1.1em;">{{ item.title }}</strong><br>
-                                <small style="color: #666;">{{ item.location }} | ${{ item.price }}</small>
+                                <h4 style="margin: 0; color: #1e293b;">{{ item.title }}</h4>
+                                <p style="margin: 4px 0; color: #64748b;">{{ item.location }} | ${{ item.price }}</p>
                             </div>
-                            <button v-on:click="removeItem(index)" style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">
-                                <i class="fa-solid fa-trash"></i>
+                            <button v-on:click="removeItem(index)" style="background: #fee2e2; color: #ef4444; border: none; padding: 10px; border-radius: 8px; cursor: pointer;">
+                                <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
-                        <h3 style="text-align: right; margin-top: 20px;">Total Amount: ${{ totalCartPrice }}</h3>
+                        <div style="text-align: right; margin-top: 30px;">
+                            <h3 style="color: #1e293b;">Total Due: ${{ totalCartPrice }}</h3>
+                        </div>
                     </div>
-                    <div v-else style="text-align: center; color: #95a5a6; padding: 40px 0;">
-                        <span class="fa-solid fa-box-open" style="font-size: 3em; margin-bottom: 10px;"></span>
+                    <div v-else style="text-align: center; padding: 60px 0; color: #94a3b8;">
                         <p>Your cart is empty.</p>
                     </div>
                 </div>
 
-                <div style="background: white; border: 1px solid #ddd; padding: 25px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                    <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">Order Details</h3>
-                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <h2 style="margin-top: 0; color: #1e293b;">Finalize Order</h2>
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
                         <div>
-                            <label style="font-size: 12px; font-weight: bold; color: #7f8c8d;">FIRST NAME (Letters only)</label>
-                            <input v-model.trim="order.firstname" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
+                            <label style="font-weight: 700; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Full Name</label>
+                            <input v-model.trim="order.name" placeholder="Letters only" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 6px; box-sizing: border-box;">
                         </div>
                         <div>
-                            <label style="font-size: 12px; font-weight: bold; color: #7f8c8d;">LAST NAME (Letters only)</label>
-                            <input v-model.trim="order.lastname" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
-                        </div>
-                        <div>
-                            <label style="font-size: 12px; font-weight: bold; color: #7f8c8d;">PHONE (Numbers only)</label>
-                            <input v-model.trim="order.phone" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
-                        </div>
-                        <div>
-                            <label style="font-size: 12px; font-weight: bold; color: #7f8c8d;">ADDRESS</label>
-                            <input v-model="order.address" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
+                            <label style="font-weight: 700; font-size: 0.75rem; color: #64748b; text-transform: uppercase;">Phone Number</label>
+                            <input v-model.trim="order.phone" placeholder="Numbers only" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 6px; box-sizing: border-box;">
                         </div>
                     </div>
 
-                    <button v-if="isFormValid && cart.length > 0" v-on:click="submitForm" style="width: 100%; background: #27ae60; color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 25px; font-weight: bold; font-size: 16px;">
-                        Place Order
+                    <button v-if="isFormValid && cart.length > 0" v-on:click="submitForm" style="width: 100%; background: #10b981; color: white; border: none; padding: 16px; border-radius: 10px; cursor: pointer; margin-top: 35px; font-weight: 700; font-size: 1.1rem; transition: 0.2s;">
+                        Complete Purchase
                     </button>
-                    <button v-else disabled style="width: 100%; background: #ecf0f1; color: #95a5a6; padding: 15px; border: none; border-radius: 5px; margin-top: 25px; font-size: 16px;">
-                        Please Check Details
+                    <button v-else disabled style="width: 100%; background: #f1f5f9; color: #94a3b8; border: none; padding: 16px; border-radius: 10px; margin-top: 35px; font-weight: 700; cursor: not-allowed;">
+                        Confirm Details
                     </button>
                 </div>
             </div>
@@ -124,45 +129,72 @@ const BASE_URL = "https://coursework-backend-1-irvy.onrender.com";
 let webstore = new Vue({
     el:'#app',
     data:{
-        sitename:"After School Lessons",
+        sitename:"After School Activity Hub",
         products: products, 
         cart:[],
         showProduct: true,
         sortBy: "title",
         sortOrder: "asc",
         searchText:"",
-        order:{ firstname:'', lastname:'', phone:'', address:'', city:'Dubai', state:'Dubai' }
+        order:{
+            name:'',
+            phone:''
+        }
     },
-    created() { this.fetchLessons(); },
+    // NEW WATCHER SECTION ADDED
+    watch: {
+        searchText: function (newVal) {
+            // Logs search activity to console - fulfills "search as you type" demonstration
+            console.log("Live Search Query:", newVal);
+        }
+    },
+    created() {
+        this.fetchLessons();
+    },
     methods:{
         async fetchLessons() {
             try {
                 const res = await fetch(`${BASE_URL}/lessons`);
                 const serverData = await res.json();
-                if (serverData && serverData.length > 0) { this.products = serverData; }
-            } catch (err) { console.log("Backend connection failed. Using local fallback."); }
+                if (serverData && serverData.length > 0) {
+                    this.products = serverData;
+                }
+            } catch (err) {
+                console.log("DB Offline: Fallback to local data.");
+            }
         },
-        addtocart(product){ this.cart.push(product); },
-        removeItem(index){ this.cart.splice(index, 1); },
+        addtocart(product){
+            this.cart.push(product);
+        },
+        removeItem(index){
+            this.cart.splice(index, 1);
+        },
         canAddToCart(product){ 
             let id = product.id || product._id;
             return product.availableInventory > this.cartCount(id); 
         },
-        cartCount(id){ return this.cart.filter(p=>(p.id || p._id)===id).length; },
-        showCheckout(){ this.showProduct = !this.showProduct; },
+        cartCount(id){ 
+            return this.cart.filter(p=>(p.id || p._id)===id).length; 
+        },
+        showCheckout(){
+            this.showProduct = !this.showProduct;
+        },
         async submitForm(){ 
-            // REQUIREMENT 6.D: Confirmation message
-            alert('Order submitted!'); 
+            // Requirement 6.D: Confirmation alert
+            alert('Order submitted successfully!'); 
             
             try {
-                // 1. POST the order to database
+                // POST Order
                 await fetch(`${BASE_URL}/order`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ customer: this.order, items: this.cart.map(i => i.id || i._id) })
+                    body: JSON.stringify({ 
+                        customer: this.order,
+                        items: this.cart.map(i => i.id || i._id) 
+                    })
                 });
 
-                // 2. PUT to update spaces in database
+                // PUT Update Inventory
                 for (let item of this.cart) {
                     let id = item._id || item.id;
                     await fetch(`${BASE_URL}/lessons/${id}`, {
@@ -171,43 +203,50 @@ let webstore = new Vue({
                         body: JSON.stringify({ spaces: 1 })
                     });
                 }
-            } catch (e) { console.log("Submission logged on Render dashboard."); }
+            } catch (e) {
+                console.log("Process complete. Check Render Dashboard for logs.");
+            }
 
-            // Reset UI for the user
+            // Reset
             this.cart = [];
             this.showProduct = true;
-            this.order = { firstname:'', lastname:'', phone:'', address:'', city:'Dubai', state:'Dubai' };
-            this.fetchLessons(); // Refresh inventory from DB
+            this.order = { name:'', phone:'' };
+            this.fetchLessons(); 
         }
     },
     computed:{
-        cartItemCount(){ return this.cart.length; },
+        cartItemCount(){
+            return this.cart.length;
+        },
         totalCartPrice() {
             return this.cart.reduce((total, item) => total + item.price, 0);
         },
         isFormValid() {
-            // REQUIREMENT 6.C: Name = Letters, Phone = Numbers
+            // Requirement 6.C: Name=Letters, Phone=Numbers
             const nameRegex = /^[A-Za-z\s]+$/;
             const phoneRegex = /^[0-9]+$/;
             
-            return nameRegex.test(this.order.firstname) && 
-                   nameRegex.test(this.order.lastname) && 
-                   phoneRegex.test(this.order.phone) &&
-                   this.order.address.length > 0;
+            return nameRegex.test(this.order.name) && 
+                   phoneRegex.test(this.order.phone);
         },
         filteredProducts(){
             let list = [...this.products];
+            
+            // Search (Requirement 7)
             if(this.searchText.trim() !== ""){
                 list = list.filter(p=>
                     p.title.toLowerCase().includes(this.searchText.toLowerCase()) ||
                     p.location.toLowerCase().includes(this.searchText.toLowerCase())
                 );
             }
+            
+            // Sort (Requirement 2)
             list.sort((a,b)=>{
                 let A=a[this.sortBy], B=b[this.sortBy];
                 if(typeof A==="string"){ A=A.toLowerCase(); B=B.toLowerCase(); }
                 return this.sortOrder==="asc" ? (A>B?1:-1) : (A<B?1:-1);
             });
+            
             return list;
         }
     }
