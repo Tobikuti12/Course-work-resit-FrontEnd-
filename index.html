@@ -23,7 +23,6 @@
     <main>
         <div v-if='showProduct'>
             <h1 v-text="sitename"></h1>
-            
             <div class="search-bar">
                 <input type="text" v-model="searchText" placeholder="Search lessons..." />
             </div>
@@ -64,7 +63,6 @@
                 <p><strong>Address:</strong> <input v-model="order.address" /></p>
                 <p><strong>City:</strong> <input v-model="order.city" /></p>
                 <p><strong>Zip/Postal Code:</strong> <input type="number" v-model.number="order.zip"></p>
-                
                 <p>
                     <strong>State:</strong>
                     <select v-model="order.state">
@@ -73,12 +71,16 @@
                     </select>
                 </p>
 
+                <div style="background: #eee; padding: 10px; margin-top: 10px; border-radius: 8px;">
+                    <h3>Order Summary</h3>
+                    <p>Name: {{order.firstname}} {{order.lastname}}</p>
+                    <p>Location: {{order.city}}, {{order.state}}</p>
+                </div>
+
                 <button v-if="isFormValid" v-on:click="submitForm" style="background-color: #16a34a; color: white; padding: 10px; border-radius: 8px; border: none; cursor: pointer; margin-top: 20px;">
                     Place Order
                 </button>
-                <button v-else disabled style="margin-top: 20px;">
-                    Please complete all fields
-                </button>
+                <button v-else disabled style="margin-top: 20px;">Complete Form</button>
             </div>
         </div>
     </main>
@@ -97,64 +99,47 @@ let webstore = new Vue({
         sortBy: "title",
         sortOrder: "asc",
         searchText:"",
-        order:{
-            firstname:'',
-            lastname:'',
-            address:'',
-            city:'',
-            state:'',
-            zip:''
-        },
-        states:{
-            AL:'Alabama',
-            AR:'Arizona',
-            CA:'California',
-            NV:'Nevada'
-        }
+        order:{ firstname:'', lastname:'', address:'', city:'', state:'', zip:'' },
+        states:{ AL:'Alabama', AR:'Arizona', CA:'California', NV:'Nevada' }
     },
-    created() {
-        this.fetchLessons();
-    },
+    created() { this.fetchLessons(); },
     methods:{
         async fetchLessons() {
             try {
                 const res = await fetch(`${BASE_URL}/lessons`);
                 const serverData = await res.json();
-                if (serverData && serverData.length > 0) {
-                    this.products = serverData;
-                }
-            } catch (err) {
-                console.log("Using local data.");
-            }
+                if (serverData && serverData.length > 0) { this.products = serverData; }
+            } catch (err) { console.log("Using local data."); }
         },
         addtocart(product){ this.cart.push(product); },
         canAddToCart(product){ 
             let id = product.id || product._id;
             return product.availableInventory > this.cartCount(id); 
         },
-        cartCount(id){ 
-            return this.cart.filter(p=>(p.id || p._id)===id).length; 
-        },
+        cartCount(id){ return this.cart.filter(p=>(p.id || p._id)===id).length; },
         showCheckout(){ this.showProduct = !this.showProduct; },
         async submitForm(){ 
-            // 1. Full Stack Order Submission
+            alert('Processing Order...');
             try {
+                // 1. POST the order
                 await fetch(`${BASE_URL}/order`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ 
-                        customer: this.order,
-                        items: this.cart.map(i => i.id || i._id) 
-                    })
+                    body: JSON.stringify({ customer: this.order, items: this.cart.map(i => i.id || i._id) })
                 });
-            } catch (e) {
-                console.log("Database offline, log created on Render.");
-            }
 
-            // 2. Professional Alert
+                // 2. PUT to update spaces (Module requirement)
+                for (let item of this.cart) {
+                    let id = item._id || item.id;
+                    await fetch(`${BASE_URL}/lessons/${id}`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ spaces: 1 })
+                    });
+                }
+            } catch (e) { console.log("Logs generated on Render."); }
+
             alert('Order Placed Successfully!');
-
-            // 3. Reset UI
             this.cart = [];
             this.showProduct = true;
             this.order = { firstname:'', lastname:'', address:'', city:'', state:'', zip:'' };
@@ -163,12 +148,7 @@ let webstore = new Vue({
     computed:{
         cartItemCount(){ return this.cart.length; },
         isFormValid() {
-            return this.order.firstname && 
-                   this.order.lastname && 
-                   this.order.address && 
-                   this.order.city && 
-                   this.order.state && 
-                   this.order.zip;
+            return this.order.firstname && this.order.lastname && this.order.address && this.order.city && this.order.state && this.order.zip;
         },
         filteredProducts(){
             let list = [...this.products];
