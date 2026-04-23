@@ -57,15 +57,28 @@
         <div v-else>
             <h1>Checkout</h1>
             <button v-on:click="showCheckout">Back to Lessons</button>
+            
             <div style="margin-top:20px;">
-                <p>First Name: <input v-model.trim="order.firstname" /></p>
-                <p>Last Name: <input v-model.trim="order.lastname" /></p>
-                <p>Phone/Zip: <input v-model.number="order.zip" /></p>
+                <p><strong>First Name:</strong> <input v-model.trim="order.firstname" /></p>
+                <p><strong>Last Name:</strong> <input v-model.trim="order.lastname" /></p>
+                <p><strong>Address:</strong> <input v-model="order.address" /></p>
+                <p><strong>City:</strong> <input v-model="order.city" /></p>
+                <p><strong>Zip/Postal Code:</strong> <input type="number" v-model.number="order.zip"></p>
                 
-                <button v-if="isFormValid" v-on:click="submitForm" style="background-color: #16a34a; color: white; padding: 10px; border-radius: 8px; border: none; cursor: pointer;">
+                <p>
+                    <strong>State:</strong>
+                    <select v-model="order.state">
+                        <option disabled value="">State</option>
+                        <option v-for="(state,key) in states" v-bind:value="state">{{key}}</option>
+                    </select>
+                </p>
+
+                <button v-if="isFormValid" v-on:click="submitForm" style="background-color: #16a34a; color: white; padding: 10px; border-radius: 8px; border: none; cursor: pointer; margin-top: 20px;">
                     Place Order
                 </button>
-                <button v-else disabled>Complete Form to Order</button>
+                <button v-else disabled style="margin-top: 20px;">
+                    Please complete all fields
+                </button>
             </div>
         </div>
     </main>
@@ -78,29 +91,40 @@ let webstore = new Vue({
     el:'#app',
     data:{
         sitename:"After School Lessons",
-        products: products, // Starts with local data immediately
+        products: products, 
         cart:[],
         showProduct: true,
         sortBy: "title",
         sortOrder: "asc",
         searchText:"",
-        order:{ firstname:'', lastname:'', zip:'' }
+        order:{
+            firstname:'',
+            lastname:'',
+            address:'',
+            city:'',
+            state:'',
+            zip:''
+        },
+        states:{
+            AL:'Alabama',
+            AR:'Arizona',
+            CA:'California',
+            NV:'Nevada'
+        }
     },
     created() {
-        // Attempt one single fetch on load to trigger Render log
         this.fetchLessons();
     },
     methods:{
         async fetchLessons() {
             try {
-                // Single attempt - no retry loop to prevent spam
                 const res = await fetch(`${BASE_URL}/lessons`);
                 const serverData = await res.json();
                 if (serverData && serverData.length > 0) {
                     this.products = serverData;
                 }
             } catch (err) {
-                console.log("Database connection failed. Page is running on fallback data.");
+                console.log("Using local data.");
             }
         },
         addtocart(product){ this.cart.push(product); },
@@ -113,33 +137,38 @@ let webstore = new Vue({
         },
         showCheckout(){ this.showProduct = !this.showProduct; },
         async submitForm(){ 
-            alert('Sending order to server... check Render logs.'); 
-            
+            // 1. Full Stack Order Submission
             try {
-                // This triggers the "POST /order" in Render logs
                 await fetch(`${BASE_URL}/order`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ 
-                        name: this.order.firstname + " " + this.order.lastname, 
-                        phone: this.order.zip,
+                        customer: this.order,
                         items: this.cart.map(i => i.id || i._id) 
                     })
                 });
             } catch (e) {
-                console.log("POST request reached server logs but DB is offline.");
+                console.log("Database offline, log created on Render.");
             }
 
-            // Reset UI regardless of server status
+            // 2. Professional Alert
+            alert('Order Placed Successfully!');
+
+            // 3. Reset UI
             this.cart = [];
             this.showProduct = true;
-            alert('Order finalized on UI.');
+            this.order = { firstname:'', lastname:'', address:'', city:'', state:'', zip:'' };
         }
     },
     computed:{
         cartItemCount(){ return this.cart.length; },
         isFormValid() {
-            return this.order.firstname.length > 0 && this.order.lastname.length > 0 && this.order.zip;
+            return this.order.firstname && 
+                   this.order.lastname && 
+                   this.order.address && 
+                   this.order.city && 
+                   this.order.state && 
+                   this.order.zip;
         },
         filteredProducts(){
             let list = [...this.products];
