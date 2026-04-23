@@ -2,152 +2,65 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>After School Lessons</title>
     <link rel="stylesheet" href="AfterSchoolLessons.css">
     <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
     <script src="AfterSchoolLessons.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
 </head>
 <body>
 <div id="app">
     <header>
-        <button v-on:click="showCheckout" v-if="cartItemCount > 0">
-            {{cartItemCount}} <span class="fa-solid fa-cart-shopping"></span> CheckOut
-        </button>
-        <button disabled v-else>
-            <span class="fa-solid fa-cart-shopping"></span> CheckOut
-        </button>   
+        <button v-on:click="showCheckout">Cart ({{cart.length}})</button>
     </header>
 
-    <main>
-        <div v-if='showProduct'>
-            <h1 v-text="sitename"></h1>
-
-            <div class="search-bar">
-                <input type="text" v-model="searchText" placeholder="Search lessons..." />
-            </div>
-
-            <div class="sort-bar">
-                <select v-model="sortBy">
-                    <option value="title">Sort by Subject</option>
-                    <option value="location">Sort by Location</option>
-                    <option value="price">Sort by Price</option>
-                    <option value="availableInventory">Sort by Spaces</option>
-                </select>
-
-                <select v-model="sortOrder">
-                    <option value="asc">Ascending</option>
-                    <option value="desc">Descending</option>
-                </select>
-            </div>
-
-            <div v-for="product in filteredProducts" :key="product._id" class="product-card">
-                <img v-bind:src="product.image" alt="Product Image">
-                <div>
-                    <h2 v-text="product.title"></h2>
-                    <p>Price: {{product.price}}</p>
-                    <p>Spaces: {{product.availableInventory - cartCount(product._id)}}</p>
-                    <p>Location: {{product.location}}</p>
-                    <div>
-                        <span v-for='n in product.rating'>★</span>
-                        <span v-for='n in 5-product.rating'>☆</span>
-                    </div>
-                    <button class="addtocart" v-on:click="addtocart(product)" v-if="canAddToCart(product)">Add to cart</button>
-                    <button disabled v-else>Add to cart</button>
-                </div>
-            </div>
-        </div>
-
-        <div v-else>
-            <h1>Checkout</h1>
-            <p>First Name: <input v-model.trim="order.firstname" /></p>
-            <p>Last Name: <input v-model.trim="order.lastname" /></p>
-            <p>Phone: <input v-model.number="order.zip" /></p>
-            <button v-if="isFormValid" v-on:click="submitForm">Place Order</button>
-            <button disabled v-else>Complete Form</button>
+    <main v-if="showProduct">
+        <input type="text" v-model="searchText" placeholder="Search lessons...">
+        
+        <div v-for="product in products" :key="product._id" class="product-card">
+            <img :src="product.image" style="width:100px">
+            <h2>{{product.title}}</h2>
+            <p>Location: {{product.location}}</p>
+            <p>Price: {{product.price}}</p>
+            <p>Spaces: {{product.availableInventory - cartCount(product._id)}}</p>
+            <button v-on:click="addtocart(product)" v-if="product.availableInventory > cartCount(product._id)">Add to Cart</button>
         </div>
     </main>
 </div>
 
-<script type="text/javascript">
-// Ensure this is HTTPS and matches your Render dashboard exactly
+<script>
+// IMPORTANT: Change this to your Render URL if testing live
 const BASE_URL = "https://coursework-backend-1-irvy.onrender.com";
 
-let webstore = new Vue({
-    el:'#app',
-    data:{
-        sitename:"After School Lessons",
-        products: [], // Starts empty, filled by fetch
-        cart:[],
+new Vue({
+    el: '#app',
+    data: {
+        products: [],
+        cart: [],
         showProduct: true,
-        sortBy:"title",
-        sortOrder:"asc",
-        searchText:"",
-        order:{ firstname:'', lastname:'', zip:'' }
+        searchText: ""
     },
     created() {
-        // This fetches your data as soon as the page opens
         this.fetchLessons();
     },
     watch: {
-        // This triggers the Full Stack Search on every keystroke
         searchText: function(val) {
             this.fetchSearchResults(val);
         }
     },
-    methods:{
+    methods: {
         async fetchLessons() {
             try {
                 const res = await fetch(`${BASE_URL}/lessons`);
                 this.products = await res.json();
-            } catch (err) {
-                console.log("Waiting for server...");
-                setTimeout(this.fetchLessons, 3000);
-            }
+            } catch (e) { console.log("Retrying..."); setTimeout(this.fetchLessons, 2000); }
         },
-        async fetchSearchResults(query) {
-            const res = await fetch(`${BASE_URL}/search?q=${query}`);
+        async fetchSearchResults(q) {
+            const res = await fetch(`${BASE_URL}/search?q=${q}`);
             this.products = await res.json();
         },
-        addtocart(product){ this.cart.push(product); },
-        canAddToCart(product){ 
-            return product.availableInventory > this.cartCount(product._id); 
-        },
-        cartCount(id){ 
-            return this.cart.filter(p=>p._id===id).length; 
-        },
-        showCheckout(){ this.showProduct = !this.showProduct; },
-        async submitForm(){
-            const res = await fetch(`${BASE_URL}/order`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ customer: this.order, items: this.cart.map(i => i._id) })
-            });
-            if(res.ok) {
-                alert('Order Submitted!');
-                this.cart = [];
-                this.showProduct = true;
-                this.fetchLessons();
-            }
-        }
-    },
-    computed:{
-        cartItemCount(){ return this.cart.length; },
-        isFormValid() {
-            return /^[A-Za-z]+$/.test(this.order.firstname) && 
-                   /^[A-Za-z]+$/.test(this.order.lastname) && 
-                   /^\d+$/.test(this.order.zip);
-        },
-        filteredProducts(){
-            let list = [...this.products];
-            list.sort((a,b)=>{
-                let A=a[this.sortBy], B=b[this.sortBy];
-                if(typeof A==="string"){ A=A.toLowerCase(); B=B.toLowerCase(); }
-                return this.sortOrder==="asc" ? (A>B?1:-1) : (A<B?1:-1);
-            });
-            return list;
-        }
+        addtocart(p) { this.cart.push(p); },
+        cartCount(id) { return this.cart.filter(item => item._id === id).length; },
+        showCheckout() { this.showProduct = !this.showProduct; }
     }
 });
 </script>
