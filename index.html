@@ -11,24 +11,23 @@
 </head>
 <body>
 <div id="app">
-    <header>
-        <button v-on:click="showCheckout" v-if="cartItemCount > 0">
+    <header style="padding: 20px; background: #333; color: white; display: flex; justify-content: space-between;">
+        <h2 style="margin:0;">{{sitename}}</h2>
+        <button v-on:click="showCheckout" v-if="cartItemCount > 0" style="padding: 10px; cursor: pointer;">
             {{cartItemCount}} <span class="fa-solid fa-cart-shopping"></span> CheckOut
         </button>
-        <button disabled v-else>
-            <span class="fa-solid fa-cart-shopping"></span> CheckOut
+        <button disabled v-else style="padding: 10px; opacity: 0.5;">
+            <span class="fa-solid fa-cart-shopping"></span> Cart Empty
         </button>   
     </header>
 
-    <main>
+    <main style="padding: 20px;">
         <div v-if='showProduct'>
-            <h1 v-text="sitename"></h1>
-            
-            <div class="search-bar">
-                <input type="text" v-model="searchText" placeholder="Search lessons..." />
+            <div class="search-bar" style="margin-bottom: 20px;">
+                <input type="text" v-model="searchText" placeholder="Search lessons..." style="width: 100%; padding: 10px;" />
             </div>
 
-            <div class="sort-bar">
+            <div class="sort-bar" style="margin-bottom: 20px;">
                 <select v-model="sortBy">
                     <option value="title">Sort by Subject</option>
                     <option value="location">Sort by Location</option>
@@ -41,61 +40,68 @@
                 </select>
             </div>
 
-            <div v-for="product in filteredProducts" :key="product.id || product._id" class="product-card">
-                <img v-bind:src="product.image" alt="Product Image">
+            <div v-for="product in filteredProducts" :key="product.id || product._id" class="product-card" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; align-items: center; gap: 20px;">
+                <img v-bind:src="product.image" alt="Lesson Image" style="width: 100px; height: 100px; object-fit: cover;">
                 <div>
-                    <h2 v-text="product.title"></h2>
-                    <p>Price: ${{product.price}}</p>
-                    <p>Location: {{product.location}}</p>
-                    <p>Spaces: {{product.availableInventory - cartCount(product.id || product._id)}}</p>
-                    <button class="addtocart" v-on:click="addtocart(product)" v-if="canAddToCart(product)">Add to cart</button>
-                    <button disabled v-else>Out of Stock</button>
+                    <h2 style="margin:0;">{{product.title}}</h2>
+                    <p>Price: ${{product.price}} | Location: {{product.location}}</p>
+                    <p>Spaces Left: {{product.availableInventory - cartCount(product.id || product._id)}}</p>
+                    <button v-on:click="addtocart(product)" v-if="canAddToCart(product)" style="background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">
+                        Add to Cart
+                    </button>
+                    <button disabled v-else style="background: #ccc; border: none; padding: 8px 15px; border-radius: 5px;">
+                        Out of Stock
+                    </button>
                 </div>
             </div>
         </div>
 
         <div v-else>
-            <h1>Shopping Cart</h1>
-            <button v-on:click="showCheckout">Back to Lessons</button>
-            
-            <div style="margin-top:20px; border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
-                <h3>Your Lessons</h3>
-                <div v-if="cart.length > 0">
-                    <div v-for="(item, index) in cart" :key="index" style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee;">
-                        <span>{{ item.title }} - ${{ item.price }}</span>
-                        <button v-on:click="removeItem(index)" style="background: red; color: white; border: none; padding: 5px; cursor: pointer;">Remove</button>
+            <button v-on:click="showCheckout" style="margin-bottom: 20px; padding: 10px; cursor: pointer;">
+                ← Back to Lessons
+            </button>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+                    <h3>Your Selected Lessons</h3>
+                    <div v-if="cart.length > 0">
+                        <div v-for="(item, index) in cart" :key="index" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee;">
+                            <div>
+                                <strong>{{ item.title }}</strong><br>
+                                <small>${{ item.price }} - {{ item.location }}</small>
+                            </div>
+                            <button v-on:click="removeItem(index)" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                                Remove
+                            </button>
+                        </div>
+                        <h4 style="text-align: right; margin-top: 20px;">Total: ${{ totalCartPrice }}</h4>
+                    </div>
+                    <div v-else style="text-align: center; color: #777; padding: 20px;">
+                        Your cart is empty.
                     </div>
                 </div>
-                <div v-else>
-                    <p>Your cart is empty.</p>
+
+                <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+                    <h3>Checkout Details</h3>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <input v-model.trim="order.firstname" placeholder="First Name (Letters only)" style="padding: 10px;">
+                        <input v-model.trim="order.lastname" placeholder="Last Name (Letters only)" style="padding: 10px;">
+                        <input v-model.trim="order.phone" placeholder="Phone (Numbers only)" style="padding: 10px;">
+                        <input v-model="order.address" placeholder="Address" style="padding: 10px;">
+                        <input v-model="order.city" placeholder="City" style="padding: 10px;">
+                        <select v-model="order.state" style="padding: 10px;">
+                            <option disabled value="">Select State</option>
+                            <option v-for="(state,key) in states" v-bind:value="state">{{key}}</option>
+                        </select>
+                    </div>
+
+                    <button v-if="isFormValid && cart.length > 0" v-on:click="submitForm" style="width: 100%; background: #28a745; color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; font-weight: bold;">
+                        Place Order
+                    </button>
+                    <button v-else disabled style="width: 100%; background: #ccc; color: #666; padding: 15px; border: none; border-radius: 5px; margin-top: 20px;">
+                        Fill Details to Order
+                    </button>
                 </div>
-            </div>
-
-            <div style="margin-top:30px;">
-                <h3>Checkout Details</h3>
-                <p>First Name: <input v-model.trim="order.firstname" placeholder="Letters only" /></p>
-                <p>Last Name: <input v-model.trim="order.lastname" placeholder="Letters only" /></p>
-                <p>Phone: <input v-model.trim="order.phone" placeholder="Numbers only" /></p>
-                <p>Address: <input v-model="order.address" /></p>
-                <p>City: <input v-model="order.city" /></p>
-                <p>
-                    State:
-                    <select v-model="order.state">
-                        <option disabled value="">Select State</option>
-                        <option v-for="(state,key) in states" v-bind:value="state">{{key}}</option>
-                    </select>
-                </p>
-
-                <div style="background: #f9f9f9; padding: 10px; margin-top: 20px;">
-                    <h4>Preview</h4>
-                    <p>Name: {{order.firstname}} {{order.lastname}}</p>
-                    <p>Phone: {{order.phone}}</p>
-                </div>
-
-                <button v-if="isFormValid && cart.length > 0" v-on:click="submitForm" style="background: green; color: white; padding: 10px 20px; margin-top: 20px; border: none; cursor: pointer;">
-                    Place Order
-                </button>
-                <button v-else disabled style="margin-top: 20px;">Complete Form Correctlly</button>
             </div>
         </div>
     </main>
@@ -127,7 +133,6 @@ let webstore = new Vue({
             } catch (err) { console.log("Using local data."); }
         },
         addtocart(product){ this.cart.push(product); },
-        // Removes item and adds space back automatically
         removeItem(index){ this.cart.splice(index, 1); },
         canAddToCart(product){ 
             let id = product.id || product._id;
@@ -151,7 +156,7 @@ let webstore = new Vue({
                         body: JSON.stringify({ spaces: 1 })
                     });
                 }
-            } catch (e) { console.log("Logs generated on Render."); }
+            } catch (e) { console.log("Backend offline, logs on Render."); }
             this.cart = [];
             this.showProduct = true;
             this.order = { firstname:'', lastname:'', phone:'', address:'', city:'', state:'' };
@@ -160,8 +165,10 @@ let webstore = new Vue({
     },
     computed:{
         cartItemCount(){ return this.cart.length; },
+        totalCartPrice() {
+            return this.cart.reduce((total, item) => total + item.price, 0);
+        },
         isFormValid() {
-            // Handbook regex requirements
             const nameRegex = /^[A-Za-z\s]+$/;
             const phoneRegex = /^[0-9]+$/;
             return nameRegex.test(this.order.firstname) && 
