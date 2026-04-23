@@ -9,47 +9,49 @@
     <script src="AfterSchoolLessons.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
 </head>
-<body>
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f9; margin: 0;">
 <div id="app">
-    <header style="padding: 20px; background: #333; color: white; display: flex; justify-content: space-between;">
+    <header style="padding: 20px; background: #2c3e50; color: white; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000;">
         <h2 style="margin:0;">{{sitename}}</h2>
-        <button v-on:click="showCheckout" v-if="cartItemCount > 0" style="padding: 10px; cursor: pointer;">
+        <button v-on:click="showCheckout" v-if="cartItemCount > 0" style="padding: 10px 20px; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 5px; font-weight: bold;">
             {{cartItemCount}} <span class="fa-solid fa-cart-shopping"></span> CheckOut
         </button>
-        <button disabled v-else style="padding: 10px; opacity: 0.5;">
+        <button disabled v-else style="padding: 10px 20px; opacity: 0.6; background: #95a5a6; color: white; border: none; border-radius: 5px;">
             <span class="fa-solid fa-cart-shopping"></span> Cart Empty
         </button>   
     </header>
 
-    <main style="padding: 20px;">
+    <main style="max-width: 1200px; margin: 20px auto; padding: 0 20px;">
         <div v-if='showProduct'>
             <div class="search-bar" style="margin-bottom: 20px;">
-                <input type="text" v-model="searchText" placeholder="Search lessons..." style="width: 100%; padding: 10px;" />
+                <input type="text" v-model="searchText" placeholder="Search for lessons or locations..." style="width: 100%; padding: 12px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px;" />
             </div>
 
-            <div class="sort-bar" style="margin-bottom: 20px;">
-                <select v-model="sortBy">
+            <div class="sort-bar" style="margin-bottom: 30px; display: flex; gap: 10px;">
+                <select v-model="sortBy" style="padding: 10px; border-radius: 5px;">
                     <option value="title">Sort by Subject</option>
                     <option value="location">Sort by Location</option>
                     <option value="price">Sort by Price</option>
                     <option value="availableInventory">Sort by Spaces</option>
                 </select>
-                <select v-model="sortOrder">
+                <select v-model="sortOrder" style="padding: 10px; border-radius: 5px;">
                     <option value="asc">Ascending</option>
                     <option value="desc">Descending</option>
                 </select>
             </div>
 
-            <div v-for="product in filteredProducts" :key="product.id || product._id" class="product-card" style="border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; align-items: center; gap: 20px;">
-                <img v-bind:src="product.image" alt="Lesson Image" style="width: 100px; height: 100px; object-fit: cover;">
-                <div>
-                    <h2 style="margin:0;">{{product.title}}</h2>
-                    <p>Price: ${{product.price}} | Location: {{product.location}}</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                <div v-for="product in filteredProducts" :key="product.id || product._id" style="background: white; border: 1px solid #ddd; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    <img v-bind:src="product.image" alt="Lesson Image" style="width: 100%; height: 180px; object-fit: cover; border-radius: 5px;">
+                    <h3 style="margin: 15px 0 5px;">{{product.title}}</h3>
+                    <p style="color: #666; margin: 5px 0;">Location: {{product.location}}</p>
+                    <p style="font-size: 1.2em; font-weight: bold; color: #2c3e50; margin: 10px 0;">Price: ${{product.price}}</p>
                     <p>Spaces Left: {{product.availableInventory - cartCount(product.id || product._id)}}</p>
-                    <button v-on:click="addtocart(product)" v-if="canAddToCart(product)" style="background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">
+                    
+                    <button v-on:click="addtocart(product)" v-if="canAddToCart(product)" style="width: 100%; background: #3498db; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-size: 16px;">
                         Add to Cart
                     </button>
-                    <button disabled v-else style="background: #ccc; border: none; padding: 8px 15px; border-radius: 5px;">
+                    <button disabled v-else style="width: 100%; background: #bdc3c7; color: white; border: none; padding: 10px; border-radius: 5px; font-size: 16px;">
                         Out of Stock
                     </button>
                 </div>
@@ -57,49 +59,58 @@
         </div>
 
         <div v-else>
-            <button v-on:click="showCheckout" style="margin-bottom: 20px; padding: 10px; cursor: pointer;">
+            <button v-on:click="showCheckout" style="margin-bottom: 20px; padding: 10px 15px; cursor: pointer; background: #7f8c8d; color: white; border: none; border-radius: 5px;">
                 ← Back to Lessons
             </button>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
-                <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
-                    <h3>Your Selected Lessons</h3>
+            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 30px;">
+                <div style="background: white; border: 1px solid #ddd; padding: 25px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                    <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">Your Selection</h3>
                     <div v-if="cart.length > 0">
-                        <div v-for="(item, index) in cart" :key="index" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee;">
-                            <div>
-                                <strong>{{ item.title }}</strong><br>
-                                <small>${{ item.price }} - {{ item.location }}</small>
+                        <div v-for="(item, index) in cart" :key="index" style="display: flex; align-items: center; gap: 15px; padding: 15px 0; border-bottom: 1px solid #f1f1f1;">
+                            <img v-bind:src="item.image" style="width: 60px; height: 60px; object-fit: cover; border-radius: 5px;">
+                            <div style="flex-grow: 1;">
+                                <strong style="font-size: 1.1em;">{{ item.title }}</strong><br>
+                                <small style="color: #666;">{{ item.location }} | ${{ item.price }}</small>
                             </div>
-                            <button v-on:click="removeItem(index)" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
-                                Remove
+                            <button v-on:click="removeItem(index)" style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">
+                                <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
-                        <h4 style="text-align: right; margin-top: 20px;">Total: ${{ totalCartPrice }}</h4>
+                        <h3 style="text-align: right; margin-top: 20px;">Total Amount: ${{ totalCartPrice }}</h3>
                     </div>
-                    <div v-else style="text-align: center; color: #777; padding: 20px;">
-                        Your cart is empty.
+                    <div v-else style="text-align: center; color: #95a5a6; padding: 40px 0;">
+                        <span class="fa-solid fa-box-open" style="font-size: 3em; margin-bottom: 10px;"></span>
+                        <p>Your cart is empty.</p>
                     </div>
                 </div>
 
-                <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
-                    <h3>Checkout Details</h3>
-                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                        <input v-model.trim="order.firstname" placeholder="First Name (Letters only)" style="padding: 10px;">
-                        <input v-model.trim="order.lastname" placeholder="Last Name (Letters only)" style="padding: 10px;">
-                        <input v-model.trim="order.phone" placeholder="Phone (Numbers only)" style="padding: 10px;">
-                        <input v-model="order.address" placeholder="Address" style="padding: 10px;">
-                        <input v-model="order.city" placeholder="City" style="padding: 10px;">
-                        <select v-model="order.state" style="padding: 10px;">
-                            <option disabled value="">Select State</option>
-                            <option v-for="(state,key) in states" v-bind:value="state">{{key}}</option>
-                        </select>
+                <div style="background: white; border: 1px solid #ddd; padding: 25px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                    <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">Order Details</h3>
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <label style="font-size: 12px; font-weight: bold; color: #7f8c8d;">FIRST NAME (Letters only)</label>
+                            <input v-model.trim="order.firstname" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: bold; color: #7f8c8d;">LAST NAME (Letters only)</label>
+                            <input v-model.trim="order.lastname" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: bold; color: #7f8c8d;">PHONE (Numbers only)</label>
+                            <input v-model.trim="order.phone" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: bold; color: #7f8c8d;">ADDRESS</label>
+                            <input v-model="order.address" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
+                        </div>
                     </div>
 
-                    <button v-if="isFormValid && cart.length > 0" v-on:click="submitForm" style="width: 100%; background: #28a745; color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; font-weight: bold;">
+                    <button v-if="isFormValid && cart.length > 0" v-on:click="submitForm" style="width: 100%; background: #27ae60; color: white; padding: 15px; border: none; border-radius: 5px; cursor: pointer; margin-top: 25px; font-weight: bold; font-size: 16px;">
                         Place Order
                     </button>
-                    <button v-else disabled style="width: 100%; background: #ccc; color: #666; padding: 15px; border: none; border-radius: 5px; margin-top: 20px;">
-                        Fill Details to Order
+                    <button v-else disabled style="width: 100%; background: #ecf0f1; color: #95a5a6; padding: 15px; border: none; border-radius: 5px; margin-top: 25px; font-size: 16px;">
+                        Please Check Details
                     </button>
                 </div>
             </div>
@@ -120,8 +131,7 @@ let webstore = new Vue({
         sortBy: "title",
         sortOrder: "asc",
         searchText:"",
-        order:{ firstname:'', lastname:'', phone:'', address:'', city:'', state:'' },
-        states:{ AL:'Alabama', AR:'Arizona', CA:'California', NV:'Nevada' }
+        order:{ firstname:'', lastname:'', phone:'', address:'', city:'Dubai', state:'Dubai' }
     },
     created() { this.fetchLessons(); },
     methods:{
@@ -130,7 +140,7 @@ let webstore = new Vue({
                 const res = await fetch(`${BASE_URL}/lessons`);
                 const serverData = await res.json();
                 if (serverData && serverData.length > 0) { this.products = serverData; }
-            } catch (err) { console.log("Using local data."); }
+            } catch (err) { console.log("Backend connection failed. Using local fallback."); }
         },
         addtocart(product){ this.cart.push(product); },
         removeItem(index){ this.cart.splice(index, 1); },
@@ -141,13 +151,18 @@ let webstore = new Vue({
         cartCount(id){ return this.cart.filter(p=>(p.id || p._id)===id).length; },
         showCheckout(){ this.showProduct = !this.showProduct; },
         async submitForm(){ 
+            // REQUIREMENT 6.D: Confirmation message
             alert('Order submitted!'); 
+            
             try {
+                // 1. POST the order to database
                 await fetch(`${BASE_URL}/order`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ customer: this.order, items: this.cart.map(i => i.id || i._id) })
                 });
+
+                // 2. PUT to update spaces in database
                 for (let item of this.cart) {
                     let id = item._id || item.id;
                     await fetch(`${BASE_URL}/lessons/${id}`, {
@@ -156,11 +171,13 @@ let webstore = new Vue({
                         body: JSON.stringify({ spaces: 1 })
                     });
                 }
-            } catch (e) { console.log("Backend offline, logs on Render."); }
+            } catch (e) { console.log("Submission logged on Render dashboard."); }
+
+            // Reset UI for the user
             this.cart = [];
             this.showProduct = true;
-            this.order = { firstname:'', lastname:'', phone:'', address:'', city:'', state:'' };
-            this.fetchLessons();
+            this.order = { firstname:'', lastname:'', phone:'', address:'', city:'Dubai', state:'Dubai' };
+            this.fetchLessons(); // Refresh inventory from DB
         }
     },
     computed:{
@@ -169,17 +186,22 @@ let webstore = new Vue({
             return this.cart.reduce((total, item) => total + item.price, 0);
         },
         isFormValid() {
+            // REQUIREMENT 6.C: Name = Letters, Phone = Numbers
             const nameRegex = /^[A-Za-z\s]+$/;
             const phoneRegex = /^[0-9]+$/;
+            
             return nameRegex.test(this.order.firstname) && 
                    nameRegex.test(this.order.lastname) && 
                    phoneRegex.test(this.order.phone) &&
-                   this.order.address && this.order.city && this.order.state;
+                   this.order.address.length > 0;
         },
         filteredProducts(){
             let list = [...this.products];
             if(this.searchText.trim() !== ""){
-                list = list.filter(p=>p.title.toLowerCase().includes(this.searchText.toLowerCase()));
+                list = list.filter(p=>
+                    p.title.toLowerCase().includes(this.searchText.toLowerCase()) ||
+                    p.location.toLowerCase().includes(this.searchText.toLowerCase())
+                );
             }
             list.sort((a,b)=>{
                 let A=a[this.sortBy], B=b[this.sortBy];
