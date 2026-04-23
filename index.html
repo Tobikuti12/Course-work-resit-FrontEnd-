@@ -12,8 +12,8 @@
 <body>
 <div id="app">
     <header>
-        <button v-on:click="showCheckout" v-if="cart.length > 0">
-            {{cart.length}} <i class="fa-solid fa-cart-shopping"></i> CheckOut
+        <button v-on:click="showCheckout" v-if="cartItemCount > 0">
+            {{cartItemCount}} <i class="fa-solid fa-cart-shopping"></i> CheckOut
         </button>
         <button disabled v-else>
             <i class="fa-solid fa-cart-shopping"></i> CheckOut
@@ -24,12 +24,25 @@
         <div v-if='showProduct'>
             <h1>{{sitename}}</h1>
 
-            <div class="search-bar">
+            <div class="search-bar" style="margin-bottom: 20px;">
                 <input type="text" v-model="searchText" placeholder="Search lessons..." />
             </div>
 
-            <div v-if="products.length === 0" style="text-align: center; padding: 20px;">
-                <p>Connecting to server... please wait (Render may take 30s to wake up)</p>
+            <div class="sort-bar" style="margin-bottom: 20px;">
+                <select v-model="sortBy">
+                    <option value="title">Sort by Subject</option>
+                    <option value="location">Sort by Location</option>
+                    <option value="price">Sort by Price</option>
+                    <option value="availableInventory">Sort by Spaces</option>
+                </select>
+                <select v-model="sortOrder">
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                </select>
+            </div>
+
+            <div v-if="products.length === 0" style="text-align: center; padding: 50px;">
+                <p>Connecting to Render server... <br> (Please wait 30-60 seconds for the server to wake up)</p>
             </div>
 
             <div v-for="product in filteredProducts" :key="product._id" class="product-card">
@@ -49,26 +62,37 @@
         <div v-else>
             <h1>Checkout</h1>
             <button v-on:click="showCheckout">Back to Lessons</button>
-            <div style="margin-top: 20px;">
+            <div style="margin-top: 30px;">
+                <h3>Enter Your Details</h3>
                 <p>First Name: <input v-model.trim="order.firstname" /></p>
                 <p>Last Name: <input v-model.trim="order.lastname" /></p>
                 <p>Phone: <input v-model.number="order.phone" /></p>
-                <button v-if="isFormValid" v-on:click="submitForm">Place Order</button>
-                <button disabled v-else>Complete Form</button>
+                
+                <div style="margin-top: 20px; background: #eee; padding: 15px;">
+                    <h4>Order Summary</h4>
+                    <p>Total Items: {{cart.length}}</p>
+                </div>
+
+                <button v-if="isFormValid" v-on:click="submitForm" style="margin-top: 20px; background: green; color: white; padding: 10px 20px;">
+                    Place Order
+                </button>
+                <button disabled v-else style="margin-top: 20px;">
+                    Please complete form
+                </button>
             </div>
         </div>
     </main>
 </div>
 
 <script type="text/javascript">
-// This MUST match your Render URL exactly
+// IMPORTANT: This must be HTTPS
 const BASE_URL = "https://coursework-backend-1-irvy.onrender.com";
 
 let webstore = new Vue({
     el: '#app',
     data: {
         sitename: "After School Lessons",
-        products: [], // Loaded from MongoDB
+        products: [], 
         cart: [],
         showProduct: true,
         sortBy: "title",
@@ -81,22 +105,28 @@ let webstore = new Vue({
         }
     },
     created() {
+        // Initial fetch from database
         this.fetchLessons();
     },
     watch: {
+        // Full stack search triggered on input
         searchText: function(newVal) {
-            this.fetchSearchResults(newVal);
+            if (newVal.trim() !== "") {
+                this.fetchSearchResults(newVal);
+            } else {
+                this.fetchLessons();
+            }
         }
     },
     methods: {
         async fetchLessons() {
             try {
                 const res = await fetch(`${BASE_URL}/lessons`);
-                if (!res.ok) throw new Error("Server error");
-                this.products = await res.json();
+                const data = await res.json();
+                this.products = data;
+                console.log("Lessons loaded:", data);
             } catch (err) {
-                console.log("Waiting for Render to wake up...");
-                // Retry every 3 seconds so the page doesn't just stay blank
+                console.log("Server sleeping... retrying in 3s");
                 setTimeout(this.fetchLessons, 3000);
             }
         },
@@ -105,7 +135,7 @@ let webstore = new Vue({
                 const res = await fetch(`${BASE_URL}/search?q=${query}`);
                 this.products = await res.json();
             } catch (err) {
-                console.log("Search error", err);
+                console.log("Search error:", err);
             }
         },
         addtocart(product) { this.cart.push(product); },
@@ -117,38 +147,53 @@ let webstore = new Vue({
         },
         showCheckout() { this.showProduct = !this.showProduct; },
         async submitForm() {
-            // POST the order to the backend
             try {
+                // 1. POST the Order
                 const res = await fetch(`${BASE_URL}/order`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        name: this.order.firstname + " " + this.order.lastname,
+                        customerName: this.order.firstname + " " + this.order.lastname,
                         phone: this.order.phone,
-                        lessonIDs: this.cart.map(item => item._id)
+                        items: this.cart.map(i => i._id)
                     })
                 });
+
                 if (res.ok) {
-                    alert('Order Successful!');
+                    // 2. PUT Update Inventory for each item
+                    for (const item of this.cart) {
+                        await fetch(`${BASE_URL}/lessons/${item._id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ spaces: 1 })
+                        });
+                    }
+                    alert('Order Placed Successfully!');
                     this.cart = [];
                     this.showProduct = true;
-                    this.fetchLessons(); // Refresh inventory
+                    this.fetchLessons(); // Refresh inventory counts from DB
                 }
-            } catch (e) { alert("Failed to place order."); }
+            } catch (e) {
+                alert("Error submitting order.");
+            }
         }
     },
     computed: {
+        cartItemCount() { return this.cart.length; },
         isFormValid() {
             return this.order.firstname.length > 0 && 
                    this.order.lastname.length > 0 && 
-                   String(this.order.phone).length > 5;
+                   /^\d+$/.test(this.order.phone);
         },
         filteredProducts() {
+            if (!this.products || this.products.length === 0) return [];
+            
             let list = [...this.products];
             list.sort((a, b) => {
                 let A = a[this.sortBy], B = b[this.sortBy];
                 if (typeof A === "string") { A = A.toLowerCase(); B = B.toLowerCase(); }
-                return this.sortOrder === "asc" ? (A > B ? 1 : -1) : (A < B ? 1 : -1);
+                if (this.sortOrder === "asc") return A > B ? 1 : -1;
+                return A < B ? 1 : -1;
             });
             return list;
         }
